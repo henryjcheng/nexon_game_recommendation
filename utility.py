@@ -3,7 +3,7 @@ This program contains functions that are ran in Jupyter Notebook.
 The purpose is to clean up Notebook so they are more readable.
 '''
 
-def eda_phase1(df):
+def eda_general(df):
     '''
     This function contains codes for EDA phase 1
     '''
@@ -49,3 +49,27 @@ def eda_phase1(df):
     print(df_temp['game'].value_counts()[:10])
     
     pass
+
+def flag_nexon_player(df):
+    '''
+    This function flags Nexon player. The program creates 4 flags, each set to 1 if 
+    player has 'player' action for one of the Nexon game. The last flag is set to 1 if 
+    any Nexon game flag is set to 1.
+    '''
+    # set flag for each Nexon game
+    df_MS = df[(df['game'] == 'MapleStory') & (df['action'] == 'play')]['id'].to_frame().drop_duplicates()
+    df_MS['flg_MS'] = 1
+    df_MA = df[(df['game'] == 'Mabinogi') & (df['action'] == 'play')]['id'].to_frame().drop_duplicates()
+    df_MA['flg_MA'] = 1
+    df_VN = df[(df['game'] == 'Vindictus') & (df['action'] == 'play')]['id'].to_frame().drop_duplicates()
+    df_VN['flg_VN'] = 1
+    
+    # merge flag back to master dataset
+    df = df.merge(df_MS, on='id', how='left')\
+           .merge(df_MA, on='id', how='left')\
+           .merge(df_VN, on='id', how='left')\
+           .fillna(0)
+    
+    # flag Nexon player
+    df['flg_NX'] = df[['flg_MS', 'flg_MA', 'flg_VN']].max(axis=1)
+    return df
