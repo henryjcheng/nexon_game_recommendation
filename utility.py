@@ -2,6 +2,8 @@
 This program contains functions that are ran in Jupyter Notebook.
 The purpose is to clean up Notebook so they are more readable.
 '''
+import numpy as np
+import pandas as pd
 
 def eda_general(df):
     '''
@@ -55,6 +57,12 @@ def flag_nexon_player(df):
     This function flags Nexon player. The program creates 4 flags, each set to 1 if 
     player has 'player' action for one of the Nexon game. The last flag is set to 1 if 
     any Nexon game flag is set to 1.
+    
+    We also create a column for player type, with value:
+    MapleStory, Mabinogi, Vindictus, Nexon, non_Nexon
+    where 'MapleStory' indicates player has only played MapleStory game, ...etc.
+    'Nexon' indicates player has played more than one Nexon game, and 'non_Nexon' means
+    player has not played any Nexon game before
     '''
     # set flag for each Nexon game
     df_MS = df[(df['game'] == 'MapleStory') & (df['action'] == 'play')]['id'].to_frame().drop_duplicates()
@@ -72,4 +80,11 @@ def flag_nexon_player(df):
     
     # flag Nexon player
     df['flg_NX'] = df[['flg_MS', 'flg_MA', 'flg_VN']].max(axis=1)
+    
+    # player type
+    df['player_type'] = np.where(df['flg_NX'] != 1, 'non_Nexon',
+                        np.where((df['flg_MS'] == 1) & (df['flg_MA'] != 1) & (df['flg_VN'] != 1), 'MapleStory',
+                        np.where((df['flg_MS'] != 1) & (df['flg_MA'] == 1) & (df['flg_VN'] != 1), 'Mabinogi',
+                        np.where((df['flg_MS'] != 1) & (df['flg_MA'] != 1) & (df['flg_VN'] == 1), 'Vindictus', 'Nexon'))))
+    
     return df
